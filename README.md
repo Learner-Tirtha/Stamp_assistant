@@ -46,5 +46,9 @@ This project involves creating a comprehensive dataset for Indian postage stamps
 
 ---
 
-## Directory Structure
+### Future Enhancements
+
+- Expand the dataset with additional images and metadata.
+- **Add search and filter capabilities to the API:**
+  - Enable users to search stamps by name, release date, or price.
 
