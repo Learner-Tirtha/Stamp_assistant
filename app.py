@@ -11,8 +11,7 @@ import openai
 app = FastAPI()
 
 # OpenAI API key setup
-#openai.api_key = "YOUR_API_KEY"
-
+#openai.api_key = "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"
 # Load pre-trained model
 model = torchvision.models.resnet18(pretrained=False)
 model.fc = torch.nn.Linear(model.fc.in_features, 1020)  # Assume there are 10 classes
@@ -35,6 +34,24 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
+# Function to generate description using OpenAI
+def generate_stamp_description(stamp_info):
+    prompt = f"Provide a detailed description for the following stamp:\n\n" \
+             f"Name: {stamp_info['name of stamp']}\n" \
+             f"Release Date: {stamp_info['day']}-{stamp_info['month']}-{stamp_info['year']}\n" \
+             f"Price: ${stamp_info['price']}\n\n" \
+             "Description:"
+    
+    # OpenAI API call using the newer model (gpt-3.5-turbo)
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # New model
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=150,
+        temperature=0.7
+    )
+    
+    return response['choices'][0]['message']['content'].strip()
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     # Check if the file is present
@@ -44,12 +61,7 @@ async def predict(file: UploadFile = File(...)):
     try:
         # Read the image file
         image_bytes = await file.read()
-
-        # Open the image using PIL
         image = Image.open(BytesIO(image_bytes))
-
-        # Ensure the image is in a valid format (e.g., RGB)
-        image = image.convert('RGB')
         
         # Apply transformation
         image = transform(image).unsqueeze(0)  # Add batch dimension
@@ -70,11 +82,15 @@ async def predict(file: UploadFile = File(...)):
             "year": 2000
         })
         
+        # Generate description using OpenAI
+       # description = generate_stamp_description(stamp_info)
+        
         # Prepare the response
         return {
             'name of stamp': stamp_info["name of stamp"],
             'release date': f"{stamp_info['day']}-{stamp_info['month']}-{stamp_info['year']}",
             'price': stamp_info["price"]
+            #'description': description
         }
 
     except Exception as e:
@@ -83,3 +99,5 @@ async def predict(file: UploadFile = File(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
